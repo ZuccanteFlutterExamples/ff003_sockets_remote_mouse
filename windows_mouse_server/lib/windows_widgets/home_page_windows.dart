@@ -2,7 +2,6 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
-import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:network_info_plus/network_info_plus.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 
@@ -33,15 +32,25 @@ class _MyHomePageStateWindows extends State<MyHomePageWindows> {
                     .where(
                       (element) => element.isNotEmpty,
                     )
-                    .map(
-                      (e) => Message.fromJson(
-                        jsonDecode(e),
-                      ),
-                    ),
+                    .last,
               )
+              .map((event) => Message.fromJson(jsonDecode(event)))
               .listen(
-                (Iterable<Message> messages) => messages.forEach(print),
+            (Message message) async {
+              ProcessResult result = await Process.run(
+                'powershell',
+                [
+                  'Add-Type',
+                  '-AssemblyName',
+                  'System.Windows.Forms;',
+                  '[System.Windows.Forms.Cursor]::Position = New-Object System.Drawing.Point(${message.x},${message.y})',
+                ],
               );
+              if ((result.stderr as String).isNotEmpty) {
+                debugPrint(result.stderr);
+              }
+            },
+          );
         },
       );
     }
