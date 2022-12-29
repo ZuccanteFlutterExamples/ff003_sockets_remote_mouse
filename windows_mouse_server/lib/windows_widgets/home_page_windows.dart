@@ -1,8 +1,9 @@
 import 'dart:convert';
 import 'dart:io';
-import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
+import 'package:mobile_scanner/mobile_scanner.dart';
+import 'package:network_info_plus/network_info_plus.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 
 import '../utils/message.dart';
@@ -21,7 +22,7 @@ class _MyHomePageStateWindows extends State<MyHomePageWindows> {
 
   Future<ServerSocket> get serverSocket async {
     if (__serverSocket == null) {
-      __serverSocket ??= await ServerSocket.bind(InternetAddress.anyIPv4, 0);
+      __serverSocket = await ServerSocket.bind(InternetAddress.anyIPv4, 0);
       __serverSocket!.listen(
         (Socket socket) {
           utf8.decoder
@@ -39,55 +40,16 @@ class _MyHomePageStateWindows extends State<MyHomePageWindows> {
                     ),
               )
               .listen(
-                (Iterable<Message> messages) => messages.forEach(
-                  (element) {
-                    print(element);
-                  },
-                ),
+                (Iterable<Message> messages) => messages.forEach(print),
               );
         },
-        // if (command.startsWith('MOVE')) {
-        //   List<String> parts = command.split(' ');
-        //   int x = int.parse(parts[1]);
-        //   int y = int.parse(parts[2]);
-        //   print('x: $x, y: $y');
-        // }
-
-        /*utf8.decoder.bind(socket).listen(
-          (String command) {
-            print('_________ START OF MESSAGE: $message ____________');
-            try {
-              print(command);
-              if (command.startsWith('MOVE')) {
-                List<String> parts = command.split(' ');
-                double x = double.parse(parts[1]);
-                double y = double.parse(parts[2]);
-                print('x: $x, y: $y');
-*/
-        //if (Platform.isWindows) {
-        /*Process.runSync('powershell', [
-                'Add-Type -Name Window -Namespace Console -MemberDefinition '
-                    '[DllImport("user32.dll")]public static extern bool SetCursorPos(int x, int y);',
-                '$x, $y | ForEach-Object {[Console.window]::SetCursorPos($x, $y)}'
-              ]);*/
-        /*Process.runSync(
-                'powershell',
-                [
-                  '[DllImport("user32.dll")]',
-                  'static extern bool SetCursorPos(int X, int Y);',
-                  'SetCursorPos($x, $y);'
-                ],
-              );*/
-        //}
-        /*}
-            } catch (error) {
-              print(error);
-            }
-            print('_______ END OF MESSAGE: $message _____________');
-            message++;*/
       );
     }
     return __serverSocket!;
+  }
+
+  Future<String?> get ipAddress async {
+    return await NetworkInfo().getWifiIP();
   }
 
   @override
@@ -101,15 +63,24 @@ class _MyHomePageStateWindows extends State<MyHomePageWindows> {
           mainAxisAlignment: MainAxisAlignment.center,
           children: <Widget>[
             FutureBuilder(
-              future: serverSocket,
+              future: Future.wait([ipAddress, serverSocket]),
               builder: (context, snapshot) {
                 if (snapshot.hasData) {
-                  return QrImage(
-                    data:
-                        '${snapshot.data!.address.address},${snapshot.data!.port}',
-                    version: QrVersions.auto,
-                    size: 200.0,
-                  );
+                  if (snapshot.data![0] != null) {
+                    String address = snapshot.data![0] as String;
+                    ServerSocket serverSocket =
+                        snapshot.data![1] as ServerSocket;
+                    print("Address: $address");
+                    return QrImage(
+                      data: '$address,${serverSocket.port}',
+                      version: QrVersions.auto,
+                      size: 200.0,
+                    );
+                  } else {
+                    return const Text(
+                      'No IP Address was found. Make sure you are connected to a Network.',
+                    );
+                  }
                 } else {
                   return const CircularProgressIndicator.adaptive();
                 }

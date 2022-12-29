@@ -55,9 +55,15 @@ class _MyHomePageStateAndroid extends State<MyHomePageAndroid> {
           setState(() => greetings = result);
           List<String> properties = greetings.split(',');
           String address = properties[0];
-          final prova = properties[1];
           int port = int.parse(properties[1]);
-          socket = await Socket.connect('192.168.1.93', port);
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                properties.toString(),
+              ),
+            ),
+          );
+          socket = await Socket.connect(address, port);
         },
         child: const Icon(Icons.camera_alt),
       ),
