@@ -36,8 +36,12 @@ class _MyHomePageStateAndroid extends State<MyHomePageAndroid> {
           int x = (details.delta.dx + details.globalPosition.dx).round();
           int y = (details.delta.dy + details.globalPosition.dy).round();
           // Send a command to the server to move the mouse cursor
-          Message message = Message(x: x, y: y);
-
+          Message message = Message(action: MessageAction.move, x: x, y: y);
+          socket?.writeln(jsonEncode(message.toJson()));
+          await socket?.flush();
+        },
+        onDoubleTap: () async {
+          Message message = Message(action: MessageAction.click, x: 0, y: 0);
           socket?.writeln(jsonEncode(message.toJson()));
           await socket?.flush();
         },
