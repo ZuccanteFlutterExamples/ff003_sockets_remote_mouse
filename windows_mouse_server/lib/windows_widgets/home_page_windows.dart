@@ -23,7 +23,18 @@ class _MyHomePageStateWindows extends State<MyHomePageWindows> {
     if (__serverSocket == null) {
       __serverSocket = await ServerSocket.bind(InternetAddress.anyIPv4, 0);
       __serverSocket!.listen(
-        (Socket socket) {
+        (Socket socket) async {
+          print('New Device Connected: ${socket.address.address}');
+          Process process = await Process.start('powershell', []);
+          process.stdin.writeln(
+            'Add-Type -AssemblyName System.Windows.Forms;',
+          );
+          /*await process.stderr.pipe(stdout);
+          await process.stdout.pipe(stderr);*/
+          process.stderr.listen((event) {
+            print(event);
+          });
+          process.stdout.drain();
           utf8.decoder
               .bind(socket)
               .map(
@@ -32,12 +43,13 @@ class _MyHomePageStateWindows extends State<MyHomePageWindows> {
                     .where(
                       (element) => element.isNotEmpty,
                     )
-                    .last,
+                    .map(
+                      (e) => Message.fromJson(json.decode(e)),
+                    ),
               )
-              .map((event) => Message.fromJson(jsonDecode(event)))
               .listen(
-            (Message message) async {
-              ProcessResult result = await Process.run(
+            (Iterable<Message> messages) async {
+              /*ProcessResult result = await Process.run(
                 'powershell',
                 [
                   'Add-Type',
@@ -48,6 +60,11 @@ class _MyHomePageStateWindows extends State<MyHomePageWindows> {
               );
               if ((result.stderr as String).isNotEmpty) {
                 debugPrint(result.stderr);
+              }*/
+              for (Message message in messages) {
+                process.stdin.writeln(
+                  '[System.Windows.Forms.Cursor]::Position = New-Object System.Drawing.Point(${message.x},${message.y})',
+                );
               }
             },
           );
