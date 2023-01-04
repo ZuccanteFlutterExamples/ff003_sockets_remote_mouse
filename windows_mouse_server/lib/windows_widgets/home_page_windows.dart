@@ -4,10 +4,13 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:network_info_plus/network_info_plus.dart';
 import 'package:qr_flutter/qr_flutter.dart';
+import 'package:windows_mouse_server/utils/constant.dart';
 import 'package:windows_mouse_server/windows_widgets/powershell_commands.dart';
+import 'package:windows_mouse_server/windows_widgets/screen_size.dart';
 
 import '../utils/message.dart';
 import '../utils/message_action.dart';
+import '../utils/pair.dart';
 
 class MyHomePageWindows extends StatefulWidget {
   const MyHomePageWindows({super.key, required this.title});
@@ -20,6 +23,15 @@ class MyHomePageWindows extends StatefulWidget {
 
 class _MyHomePageStateWindows extends State<MyHomePageWindows> {
   ServerSocket? __serverSocket;
+  int _clientWidth = 0;
+  int _clientHeight = 0;
+  int _hostWidth = 1920;
+  int _hostHeight = 1080;
+
+  @override
+  void initState() {
+    super.initState();
+  }
 
   Future<ServerSocket> get serverSocket async {
     if (__serverSocket == null) {
@@ -37,12 +49,8 @@ class _MyHomePageStateWindows extends State<MyHomePageWindows> {
               .map(
                 (event) => event
                     .split('\n')
-                    .where(
-                      (element) => element.isNotEmpty,
-                    )
-                    .map(
-                      (e) => Message.fromJson(json.decode(e)),
-                    ),
+                    .where((element) => element.isNotEmpty)
+                    .map((e) => Message.fromJson(json.decode(e))),
               )
               .listen(
             (Iterable<Message> messages) async {
@@ -50,13 +58,23 @@ class _MyHomePageStateWindows extends State<MyHomePageWindows> {
                 switch (message.action) {
                   case MessageAction.move:
                     process.stdin.writeln(
-                      PowershellCommands.move(x: message.x, y: message.y),
+                      PowershellCommands.move(
+                        x: translateX(message.x),
+                        y: translateY(message.y),
+                      ),
                     );
                     break;
                   case MessageAction.leftClick:
                     process.stdin.writeln(
-                      PowershellCommands.leftClick(x: message.x, y: message.y),
+                      PowershellCommands.leftClick(
+                        x: translateX(message.x),
+                        y: translateY(message.y),
+                      ),
                     );
+                    break;
+                  case MessageAction.screenSize:
+                    _clientWidth = message.x;
+                    _clientHeight = message.y;
                     break;
                 }
               }
@@ -68,8 +86,12 @@ class _MyHomePageStateWindows extends State<MyHomePageWindows> {
     return __serverSocket!;
   }
 
-  Future<String?> get ipAddress async {
-    return await NetworkInfo().getWifiIP();
+  int translateX(int x) {
+    return (x * (_hostWidth / _clientWidth)).round();
+  }
+
+  int translateY(int y) {
+    return (y * (_hostHeight / _clientHeight)).round();
   }
 
   @override
@@ -80,30 +102,40 @@ class _MyHomePageStateWindows extends State<MyHomePageWindows> {
       ),
       body: Center(
         child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
+          mainAxisAlignment: MainAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
           children: <Widget>[
             FutureBuilder(
-              future: Future.wait([ipAddress, serverSocket]),
+              future: Future.wait([NetworkInfo().getWifiIP(), serverSocket]),
               builder: (context, snapshot) {
                 if (snapshot.hasData) {
-                  if (snapshot.data![0] != null) {
-                    String address = snapshot.data![0] as String;
-                    ServerSocket serverSocket =
-                        snapshot.data![1] as ServerSocket;
-                    debugPrint("Address: $address");
-                    return QrImage(
-                      data: '$address,${serverSocket.port}',
-                      version: QrVersions.auto,
-                      size: 200.0,
-                    );
-                  } else {
-                    return const Text(
-                      'No IP Address was found. Make sure you are connected to a WiFi Network.',
-                    );
-                  }
+                  String address = snapshot.data![0] as String;
+                  ServerSocket serverSocket = snapshot.data![1] as ServerSocket;
+                  debugPrint('Address: $address');
+                  return QrImage(
+                    data: '$address,${serverSocket.port}',
+                    version: QrVersions.auto,
+                    size: 200.0,
+                  );
                 } else {
                   return const CircularProgressIndicator.adaptive();
                 }
+              },
+            ),
+            ScreenSize(
+              size: Pair<int>(_hostWidth, _hostHeight),
+              width: Constants.windowsWidgetWidth,
+              spaceBetween: Constants.spaceBetweenWidgets,
+              onChanged: (Pair<int> size) {
+                _hostWidth = size.first;
+                _hostHeight = size.second;
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text(
+                      'Screen size changed!',
+                    ),
+                  ),
+                );
               },
             ),
           ],
