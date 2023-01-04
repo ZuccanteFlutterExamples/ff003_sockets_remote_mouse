@@ -19,8 +19,3 @@ class Message {
   @override
   String toString() => 'Message: {action: $action, x: $x, y: $y}';
 }
-
-class MessageAction {
-  static const String move = 'MOVE';
-  static const String click = 'CLICK';
-}

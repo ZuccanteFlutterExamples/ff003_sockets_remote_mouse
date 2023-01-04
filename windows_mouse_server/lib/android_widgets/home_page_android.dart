@@ -1,10 +1,11 @@
-import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:windows_mouse_server/android_widgets/scanner_page.dart';
 import 'package:windows_mouse_server/utils/message.dart';
+
+import '../utils/message_action.dart';
 
 class MyHomePageAndroid extends StatefulWidget {
   const MyHomePageAndroid({super.key, required this.title});
@@ -19,6 +20,8 @@ class _MyHomePageStateAndroid extends State<MyHomePageAndroid> {
   String greetings = '';
 
   Socket? socket;
+  int _x = 0;
+  int _y = 0;
 
   @override
   void initState() {
@@ -33,15 +36,16 @@ class _MyHomePageStateAndroid extends State<MyHomePageAndroid> {
       ),
       body: GestureDetector(
         onPanUpdate: (details) async {
-          int x = (details.delta.dx + details.globalPosition.dx).round();
-          int y = (details.delta.dy + details.globalPosition.dy).round();
+          _x = (details.delta.dx + details.globalPosition.dx).round();
+          _y = (details.delta.dy + details.globalPosition.dy).round();
           // Send a command to the server to move the mouse cursor
-          Message message = Message(action: MessageAction.move, x: x, y: y);
+          Message message = Message(action: MessageAction.move, x: _x, y: _y);
           socket?.writeln(jsonEncode(message.toJson()));
           await socket?.flush();
         },
         onDoubleTap: () async {
-          Message message = Message(action: MessageAction.click, x: 0, y: 0);
+          Message message =
+              Message(action: MessageAction.leftClick, x: _x, y: _y);
           socket?.writeln(jsonEncode(message.toJson()));
           await socket?.flush();
         },
