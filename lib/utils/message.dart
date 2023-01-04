@@ -1,21 +1,20 @@
+import 'package:windows_mouse_server/utils/pair.dart';
+
 class Message {
   final String action;
-  final int x;
-  final int y;
+  final Pair<int, int> pair;
 
-  Message({required this.action, required this.x, required this.y});
+  const Message({required this.action, required this.pair});
 
   Message.fromJson(Map<String, dynamic> json)
       : action = json['action'] as String,
-        x = json['x'] as int,
-        y = json['y'] as int;
+        pair = Pair<int, int>.fromJson(json['pair']);
 
   Map<String, dynamic> toJson() => {
         'action': action,
-        'x': x,
-        'y': y,
+        'pair': pair.toJson(),
       };
 
   @override
-  String toString() => 'Message: {action: $action, x: $x, y: $y}';
+  String toString() => 'Message: {action: $action, pair: $pair}';
 }

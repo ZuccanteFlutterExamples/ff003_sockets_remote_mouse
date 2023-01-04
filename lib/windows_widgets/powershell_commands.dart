@@ -1,6 +1,8 @@
 import '../utils/message.dart';
+import '../utils/pair.dart';
 
 class PowershellCommands {
+  PowershellCommands._();
   static const String configuration = '''
 Add-Type -AssemblyName System.Windows.Forms;
 \$cSource = @'
@@ -70,11 +72,11 @@ public static void LeftClickAtPoint(int x, int y)
 Add-Type -TypeDefinition \$cSource -ReferencedAssemblies System.Windows.Forms,System.Drawing
 ''';
 
-  static String move({required int x, required int y}) {
-    return '[System.Windows.Forms.Cursor]::Position = New-Object System.Drawing.Point($x, $y)';
+  static String move(Pair<int, int> point) {
+    return '[System.Windows.Forms.Cursor]::Position = New-Object System.Drawing.Point(${point.first}, ${point.second})';
   }
 
-  static String leftClick({required int x, required int y}) {
-    return '[Clicker]::LeftClickAtPoint($x, $y)';
+  static String leftClick(Pair<int, int> point) {
+    return '[Clicker]::LeftClickAtPoint(${point.first}, ${point.second})';
   }
 }

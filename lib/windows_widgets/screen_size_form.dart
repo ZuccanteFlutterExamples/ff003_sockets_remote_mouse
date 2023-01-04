@@ -2,13 +2,13 @@ import 'package:flutter/material.dart';
 
 import '../utils/pair.dart';
 
-class ScreenSize extends StatefulWidget {
-  final Pair<int> size;
-  final void Function(Pair<int>) onChanged;
+class ScreenSizeForm extends StatefulWidget {
+  final Pair<int, int> size;
+  final void Function(Pair<int, int>) onChanged;
   final double width;
   final double spaceBetween;
 
-  const ScreenSize({
+  const ScreenSizeForm({
     super.key,
     required this.size,
     required this.onChanged,
@@ -17,10 +17,10 @@ class ScreenSize extends StatefulWidget {
   });
 
   @override
-  State<StatefulWidget> createState() => _ScreenSizeState();
+  State<StatefulWidget> createState() => _ScreenSizeFormState();
 }
 
-class _ScreenSizeState extends State<ScreenSize> {
+class _ScreenSizeFormState extends State<ScreenSizeForm> {
   late final GlobalKey<FormState> _formKey;
   late final TextEditingController _widthController;
   late final TextEditingController _heightController;
@@ -80,7 +80,7 @@ class _ScreenSizeState extends State<ScreenSize> {
             child: ElevatedButton(
               onPressed: () {
                 if (_formKey.currentState!.validate()) {
-                  Pair<int> size = Pair(
+                  Pair<int, int> size = Pair(
                     int.parse(_widthController.text),
                     int.parse(_heightController.text),
                   );

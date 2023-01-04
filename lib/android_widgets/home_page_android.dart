@@ -4,9 +4,11 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:windows_mouse_server/android_widgets/scanner_page.dart';
 import 'package:windows_mouse_server/utils/constant.dart';
+import 'package:windows_mouse_server/utils/display_strings.dart';
 import 'package:windows_mouse_server/utils/message.dart';
 
 import '../utils/message_action.dart';
+import '../utils/pair.dart';
 
 class MyHomePageAndroid extends StatefulWidget {
   const MyHomePageAndroid({super.key, required this.title});
@@ -18,42 +20,39 @@ class MyHomePageAndroid extends StatefulWidget {
 }
 
 class _MyHomePageStateAndroid extends State<MyHomePageAndroid> {
-  late String _greetings;
-
-  Socket? socket;
-  int _x = 0;
-  int _y = 0;
-
   late GlobalKey _key;
+  late Pair<int, int> _point;
+  Widget? _icon;
+  Socket? _socket;
 
   @override
   void initState() {
     super.initState();
-    _greetings = '';
+    _point = Constants.defaultScreenSize;
     _key = GlobalKey();
   }
 
   Future<void> _sendLeftClick() async {
     Message message = Message(
       action: MessageAction.leftClick,
-      x: _x,
-      y: _y,
+      pair: _point,
     );
-    socket?.writeln(jsonEncode(message.toJson()));
-    await socket?.flush();
+    _socket?.writeln(jsonEncode(message.toJson()));
+    await _socket?.flush();
   }
 
   Future<void> _sendMove(DragUpdateDetails details) async {
-    _x = (details.delta.dx + details.globalPosition.dx).round();
-    _y = (details.delta.dy + details.globalPosition.dy).round();
+    _point = Pair(
+      (details.delta.dx + details.globalPosition.dx).round(),
+      (details.delta.dy + details.globalPosition.dy).round(),
+    );
     // Send a command to the server to move the mouse cursor
     Message message = Message(
       action: MessageAction.move,
-      x: _x,
-      y: _y,
+      pair: _point,
     );
-    socket?.writeln(jsonEncode(message.toJson()));
-    await socket?.flush();
+    _socket?.writeln(jsonEncode(message.toJson()));
+    await _socket?.flush();
   }
 
   @override
@@ -61,6 +60,14 @@ class _MyHomePageStateAndroid extends State<MyHomePageAndroid> {
     return Scaffold(
       appBar: AppBar(
         title: Text(widget.title),
+        actions: [
+          AnimatedSwitcher(
+            duration: const Duration(
+              milliseconds: 1000,
+            ),
+            child: _icon,
+          ),
+        ],
       ),
       body: SafeArea(
         child: Column(
@@ -99,13 +106,12 @@ class _MyHomePageStateAndroid extends State<MyHomePageAndroid> {
             context,
             MaterialPageRoute(
               builder: (context) => const ScannerPage(
-                title: 'Scan QR code',
+                title: DisplayStrings.qrCodePageTitle,
               ),
             ),
           ).then(
             (var result) {
-              setState(() => _greetings = result);
-              List<String> properties = _greetings.split(',');
+              List<String> properties = result.split(',');
               String address = properties[0];
               int port = int.parse(properties[1]);
               ScaffoldMessenger.of(context).showSnackBar(
@@ -117,13 +123,21 @@ class _MyHomePageStateAndroid extends State<MyHomePageAndroid> {
               );
               Socket.connect(address, port).then(
                 (Socket value) {
-                  socket = value;
+                  _socket = value;
+                  setState(() {
+                    _icon = Container(
+                        margin: const EdgeInsets.symmetric(
+                            horizontal: Constants.spaceBetweenWidgets),
+                        child: const Icon(Icons.check));
+                  });
                   Message message = Message(
                     action: MessageAction.screenSize,
-                    x: MediaQuery.of(context).size.width.round(),
-                    y: MediaQuery.of(context).size.height.round(),
+                    pair: Pair<int, int>(
+                      MediaQuery.of(context).size.width.round(),
+                      MediaQuery.of(context).size.height.round(),
+                    ),
                   );
-                  socket!.writeln(jsonEncode(message));
+                  _socket!.writeln(jsonEncode(message));
                 },
               );
             },

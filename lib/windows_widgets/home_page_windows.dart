@@ -5,8 +5,9 @@ import 'package:flutter/material.dart';
 import 'package:network_info_plus/network_info_plus.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import 'package:windows_mouse_server/utils/constant.dart';
+import 'package:windows_mouse_server/utils/display_strings.dart';
 import 'package:windows_mouse_server/windows_widgets/powershell_commands.dart';
-import 'package:windows_mouse_server/windows_widgets/screen_size.dart';
+import 'package:windows_mouse_server/windows_widgets/screen_size_form.dart';
 
 import '../utils/message.dart';
 import '../utils/message_action.dart';
@@ -23,10 +24,8 @@ class MyHomePageWindows extends StatefulWidget {
 
 class _MyHomePageStateWindows extends State<MyHomePageWindows> {
   ServerSocket? __serverSocket;
-  int _clientWidth = 0;
-  int _clientHeight = 0;
-  int _hostWidth = 1920;
-  int _hostHeight = 1080;
+  Pair<int, int> _clientSize = const Pair(0, 0);
+  Pair<int, int> _hostSize = Constants.defaultScreenSize;
 
   @override
   void initState() {
@@ -58,23 +57,16 @@ class _MyHomePageStateWindows extends State<MyHomePageWindows> {
                 switch (message.action) {
                   case MessageAction.move:
                     process.stdin.writeln(
-                      PowershellCommands.move(
-                        x: translateX(message.x),
-                        y: translateY(message.y),
-                      ),
+                      PowershellCommands.move(translate(message.pair)),
                     );
                     break;
                   case MessageAction.leftClick:
                     process.stdin.writeln(
-                      PowershellCommands.leftClick(
-                        x: translateX(message.x),
-                        y: translateY(message.y),
-                      ),
+                      PowershellCommands.leftClick(translate(message.pair)),
                     );
                     break;
                   case MessageAction.screenSize:
-                    _clientWidth = message.x;
-                    _clientHeight = message.y;
+                    _clientSize = message.pair;
                     break;
                 }
               }
@@ -86,13 +78,10 @@ class _MyHomePageStateWindows extends State<MyHomePageWindows> {
     return __serverSocket!;
   }
 
-  int translateX(int x) {
-    return (x * (_hostWidth / _clientWidth)).round();
-  }
-
-  int translateY(int y) {
-    return (y * (_hostHeight / _clientHeight)).round();
-  }
+  Pair<int, int> translate(Pair<int, int> source) => Pair(
+        (source.first * (_hostSize.first / _clientSize.first)).round(),
+        (source.second * (_hostSize.second / _clientSize.second)).round(),
+      );
 
   @override
   Widget build(BuildContext context) {
@@ -115,24 +104,23 @@ class _MyHomePageStateWindows extends State<MyHomePageWindows> {
                   return QrImage(
                     data: '$address,${serverSocket.port}',
                     version: QrVersions.auto,
-                    size: 200.0,
+                    size: Constants.windowsWidgetWidth,
                   );
                 } else {
                   return const CircularProgressIndicator.adaptive();
                 }
               },
             ),
-            ScreenSize(
-              size: Pair<int>(_hostWidth, _hostHeight),
+            ScreenSizeForm(
+              size: _hostSize,
               width: Constants.windowsWidgetWidth,
               spaceBetween: Constants.spaceBetweenWidgets,
-              onChanged: (Pair<int> size) {
-                _hostWidth = size.first;
-                _hostHeight = size.second;
+              onChanged: (Pair<int, int> size) {
+                _hostSize = size;
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(
                     content: Text(
-                      'Screen size changed!',
+                      DisplayStrings.changedScreenSize,
                     ),
                   ),
                 );
