@@ -18,7 +18,6 @@ class MyHomePageAndroid extends StatefulWidget {
 }
 
 class _MyHomePageStateAndroid extends State<MyHomePageAndroid> {
-  late GlobalKey _key;
   late Pair<int, int> _point;
   late SocketHandler _socketHandler;
   Widget? _icon;
@@ -27,7 +26,6 @@ class _MyHomePageStateAndroid extends State<MyHomePageAndroid> {
   void initState() {
     super.initState();
     _point = Constants.defaultScreenSize;
-    _key = GlobalKey();
     _socketHandler = SocketHandler();
   }
 
@@ -72,7 +70,6 @@ class _MyHomePageStateAndroid extends State<MyHomePageAndroid> {
             Flexible(
               flex: 3,
               child: GestureDetector(
-                key: _key,
                 onPanUpdate: _sendMove,
                 onDoubleTap: _sendLeftClick,
                 child: Card(
