@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:windows_mouse_server/android_widgets/scanner_page.dart';
-import 'package:windows_mouse_server/android_widgets/socket_handler.dart';
+import 'package:windows_mouse_server/utils/connection/socket_handler.dart';
 import 'package:windows_mouse_server/utils/constant.dart';
 import 'package:windows_mouse_server/utils/display_strings.dart';
 import 'package:windows_mouse_server/utils/message.dart';

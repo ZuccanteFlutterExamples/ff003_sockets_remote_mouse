@@ -2,7 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
-import '../utils/message.dart';
+import '../message.dart';
 
 class SocketHandler {
   late Completer<Socket> _completer;
