@@ -6,9 +6,10 @@ class Message {
 
   const Message({required this.action, required this.pair});
 
-  Message.fromJson(Map<String, dynamic> json)
-      : action = json['action'] as String,
-        pair = Pair<int, int>.fromJson(json['pair']);
+  factory Message.fromJson(Map<String, dynamic> json) => Message(
+        action: json['action'],
+        pair: Pair.fromJson(json['pair']),
+      );
 
   Map<String, dynamic> toJson() => {
         'action': action,

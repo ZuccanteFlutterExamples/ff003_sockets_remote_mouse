@@ -1,8 +1,6 @@
-import 'dart:convert';
-import 'dart:io';
-
 import 'package:flutter/material.dart';
 import 'package:windows_mouse_server/android_widgets/scanner_page.dart';
+import 'package:windows_mouse_server/android_widgets/socket_handler.dart';
 import 'package:windows_mouse_server/utils/constant.dart';
 import 'package:windows_mouse_server/utils/display_strings.dart';
 import 'package:windows_mouse_server/utils/message.dart';
@@ -22,14 +20,15 @@ class MyHomePageAndroid extends StatefulWidget {
 class _MyHomePageStateAndroid extends State<MyHomePageAndroid> {
   late GlobalKey _key;
   late Pair<int, int> _point;
+  late SocketHandler _socketHandler;
   Widget? _icon;
-  Socket? _socket;
 
   @override
   void initState() {
     super.initState();
     _point = Constants.defaultScreenSize;
     _key = GlobalKey();
+    _socketHandler = SocketHandler();
   }
 
   Future<void> _sendLeftClick() async {
@@ -37,8 +36,7 @@ class _MyHomePageStateAndroid extends State<MyHomePageAndroid> {
       action: MessageAction.leftClick,
       pair: _point,
     );
-    _socket?.writeln(jsonEncode(message.toJson()));
-    await _socket?.flush();
+    await _socketHandler.sendMessage(message);
   }
 
   Future<void> _sendMove(DragUpdateDetails details) async {
@@ -51,8 +49,7 @@ class _MyHomePageStateAndroid extends State<MyHomePageAndroid> {
       action: MessageAction.move,
       pair: _point,
     );
-    _socket?.writeln(jsonEncode(message.toJson()));
-    await _socket?.flush();
+    await _socketHandler.sendMessage(message);
   }
 
   @override
@@ -62,9 +59,7 @@ class _MyHomePageStateAndroid extends State<MyHomePageAndroid> {
         title: Text(widget.title),
         actions: [
           AnimatedSwitcher(
-            duration: const Duration(
-              milliseconds: 1000,
-            ),
+            duration: Constants.animatedIconDuration,
             child: _icon,
           ),
         ],
@@ -77,16 +72,13 @@ class _MyHomePageStateAndroid extends State<MyHomePageAndroid> {
             Flexible(
               flex: 3,
               child: GestureDetector(
-                behavior: HitTestBehavior.deferToChild,
                 key: _key,
                 onPanUpdate: _sendMove,
                 onDoubleTap: _sendLeftClick,
-                child: Expanded(
-                  child: Card(
-                    margin: const EdgeInsets.all(Constants.spaceBetweenWidgets),
-                    elevation: Constants.spaceBetweenWidgets,
-                    child: Container(),
-                  ),
+                child: Card(
+                  margin: const EdgeInsets.all(Constants.spaceBetweenWidgets),
+                  elevation: Constants.spaceBetweenWidgets,
+                  child: Container(),
                 ),
               ),
             ),
@@ -121,15 +113,16 @@ class _MyHomePageStateAndroid extends State<MyHomePageAndroid> {
                   ),
                 ),
               );
-              Socket.connect(address, port).then(
-                (Socket value) {
-                  _socket = value;
-                  setState(() {
-                    _icon = Container(
-                        margin: const EdgeInsets.symmetric(
-                            horizontal: Constants.spaceBetweenWidgets),
-                        child: const Icon(Icons.check));
-                  });
+              _socketHandler.connect(host: address, port: port).then(
+                (_) async {
+                  setState(
+                    () => _icon = Container(
+                      margin: const EdgeInsets.symmetric(
+                        horizontal: Constants.spaceBetweenWidgets,
+                      ),
+                      child: const Icon(Icons.check),
+                    ),
+                  );
                   Message message = Message(
                     action: MessageAction.screenSize,
                     pair: Pair<int, int>(
@@ -137,7 +130,7 @@ class _MyHomePageStateAndroid extends State<MyHomePageAndroid> {
                       MediaQuery.of(context).size.height.round(),
                     ),
                   );
-                  _socket!.writeln(jsonEncode(message));
+                  await _socketHandler.sendMessage(message);
                 },
               );
             },
