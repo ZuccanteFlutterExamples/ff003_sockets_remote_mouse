@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:windows_mouse_server/utils/display_strings.dart';
 
 import '../utils/pair.dart';
 
@@ -53,7 +54,7 @@ class _ScreenSizeFormState extends State<ScreenSizeForm> {
                 if (value == null ||
                     value.isEmpty ||
                     int.tryParse(value) == null) {
-                  return 'This is not a good value';
+                  return DisplayStrings.formError;
                 }
                 return null;
               },
@@ -68,7 +69,7 @@ class _ScreenSizeFormState extends State<ScreenSizeForm> {
                 if (value == null ||
                     value.isEmpty ||
                     int.tryParse(value) == null) {
-                  return 'This is not a good value';
+                  return DisplayStrings.formError;
                 }
                 return null;
               },

@@ -1,12 +1,11 @@
 import 'dart:async';
-import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:network_info_plus/network_info_plus.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import 'package:windows_mouse_server/utils/constant.dart';
 import 'package:windows_mouse_server/utils/display_strings.dart';
-import 'package:windows_mouse_server/windows_widgets/powershell_commands.dart';
+import 'package:windows_mouse_server/utils/mouse_pointer.dart';
 import 'package:windows_mouse_server/windows_widgets/screen_size_form.dart';
 import 'package:windows_mouse_server/utils/connection/server_socket_handler.dart';
 
@@ -31,28 +30,19 @@ class _MyHomePageStateWindows extends State<MyHomePageWindows> {
   @override
   void initState() {
     super.initState();
-    Completer<Process> processCompleter = Completer();
-    Process.start('powershell', []).then((process) {
-      process.stderr.listen((event) {
-        debugPrint('ERROR: ${event.toString()}');
-      });
-      process.stdout.drain();
-      process.stdin.writeln(PowershellCommands.configuration);
-      processCompleter.complete(process);
-    });
+    MousePointer mousePointer = MousePointer.instance();
     _serverSocketHandler = ServerSocketHandler(
       onMessages: (messages) async {
-        Process process = await processCompleter.future;
         for (Message message in messages) {
           switch (message.action) {
             case MessageAction.move:
-              process.stdin.writeln(
-                PowershellCommands.move(_translate(message.pair)),
+              mousePointer.move(
+                _translate(message.pair),
               );
               break;
             case MessageAction.leftClick:
-              process.stdin.writeln(
-                PowershellCommands.leftClick(_translate(message.pair)),
+              mousePointer.leftClick(
+                _translate(message.pair),
               );
               break;
             case MessageAction.screenSize:

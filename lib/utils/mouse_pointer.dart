@@ -1,9 +1,13 @@
-import '../utils/message.dart';
-import '../utils/pair.dart';
+import 'dart:async';
+import 'dart:io';
 
-class PowershellCommands {
-  PowershellCommands._();
-  static const String configuration = '''
+import 'package:flutter/foundation.dart';
+import 'package:windows_mouse_server/utils/pair.dart';
+
+class MousePointer {
+  static late Completer<Process> _completer;
+  static MousePointer? _mousePointer;
+  static const String _configuration = '''
 Add-Type -AssemblyName System.Windows.Forms;
 \$cSource = @'
 using System;
@@ -72,11 +76,44 @@ public static void LeftClickAtPoint(int x, int y)
 Add-Type -TypeDefinition \$cSource -ReferencedAssemblies System.Windows.Forms,System.Drawing
 ''';
 
-  static String move(Pair<int, int> point) {
-    return '[System.Windows.Forms.Cursor]::Position = New-Object System.Drawing.Point(${point.first}, ${point.second})';
+  MousePointer._();
+
+  factory MousePointer.instance() {
+    if (_mousePointer == null) {
+      _mousePointer = MousePointer._();
+      _completer = Completer();
+      Process.start('powershell', []).then(
+        (Process process) {
+          // stderr.listen listens to the standard error stream so that whenever
+          // an error occur it will be printed out by the debugPrint function.
+          process.stderr.listen(
+            (error) => debugPrint('ERROR: ${error.toString()}'),
+          );
+
+          // draining the standard output allows to continue processing the standard input
+          process.stdout.drain();
+          process.stdin.writeln(_configuration);
+          _completer.complete(process);
+        },
+      );
+    }
+    return _mousePointer!;
   }
 
-  static String leftClick(Pair<int, int> point) {
-    return '[Clicker]::LeftClickAtPoint(${point.first}, ${point.second})';
+  Future<void> _execute(String action) async {
+    Process process = await _completer.future;
+    process.stdin.writeln(action);
   }
+
+  static String _getMove(Pair<int, int> point) =>
+      '[System.Windows.Forms.Cursor]::Position = New-Object System.Drawing.Point(${point.first}, ${point.second})';
+
+  static String _getLeftClick(Pair<int, int> point) =>
+      '[Clicker]::LeftClickAtPoint(${point.first}, ${point.second})';
+
+  Future<void> move(Pair<int, int> point) async =>
+      await _execute(_getMove(point));
+
+  Future<void> leftClick(Pair<int, int> point) async =>
+      await _execute(_getLeftClick(point));
 }
