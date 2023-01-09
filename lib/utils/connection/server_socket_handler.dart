@@ -7,6 +7,9 @@ import '../message.dart';
 class ServerSocketHandler {
   late Completer<ServerSocket> _completer;
 
+  /// Initialize a `ServerSocket` and call [onMessages] whenever a `Message` is received.
+  ///
+  /// [onMessages] this is the function that will be called whenever a new `Message` is received from a _Client_
   ServerSocketHandler(
       {required Future<void> Function(Iterable<Message> messages) onMessages}) {
     _completer = Completer();
@@ -30,7 +33,10 @@ class ServerSocketHandler {
     );
   }
 
+  /// Returns the [port] which is listening to
   Future<int> get port async => (await _completer.future).port;
+
+  /// Returns the [address] of the host machine
   Future<InternetAddress> get address async =>
       (await _completer.future).address;
 }

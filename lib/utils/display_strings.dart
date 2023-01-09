@@ -4,4 +4,5 @@ class DisplayStrings {
   static const String qrCodePageTitle = 'Scan QR code';
   static const String appTitle = 'Remote mouse controller';
   static const String formError = 'This is not a good value';
+  static const String scanError = 'Failed to scan';
 }

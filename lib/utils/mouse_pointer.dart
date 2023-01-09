@@ -76,8 +76,10 @@ public static void LeftClickAtPoint(int x, int y)
 Add-Type -TypeDefinition \$cSource -ReferencedAssemblies System.Windows.Forms,System.Drawing
 ''';
 
+  /// Private constructor
   MousePointer._();
 
+  /// This is the method used to get an instance of the `MousePointer` class.
   factory MousePointer.instance() {
     if (_mousePointer == null) {
       _mousePointer = MousePointer._();
@@ -100,20 +102,25 @@ Add-Type -TypeDefinition \$cSource -ReferencedAssemblies System.Windows.Forms,Sy
     return _mousePointer!;
   }
 
+  /// This method is used to execute a powershell command [action].
   Future<void> _execute(String action) async {
     Process process = await _completer.future;
     process.stdin.writeln(action);
   }
 
+  /// Call this to construct the specific powershell command to move the mouse to [point]
   static String _getMove(Pair<int, int> point) =>
       '[System.Windows.Forms.Cursor]::Position = New-Object System.Drawing.Point(${point.first}, ${point.second})';
 
+  /// Call this to construct the specific powershell command to click the mouse in [point]
   static String _getLeftClick(Pair<int, int> point) =>
       '[Clicker]::LeftClickAtPoint(${point.first}, ${point.second})';
 
+  /// Moves the mouse to [point]
   Future<void> move(Pair<int, int> point) async =>
       await _execute(_getMove(point));
 
+  /// Clicks the mouse in [point]
   Future<void> leftClick(Pair<int, int> point) async =>
       await _execute(_getLeftClick(point));
 }
